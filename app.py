@@ -256,25 +256,25 @@ def render_card_grouped(
     monograms = [(e.get("monogram") or auto_monogram(e.get("name", "")))[:1] or "名" for e in entries]
 
     chips_html = "".join(
-        f"""<div style="width:28px;height:28px;border-radius:50%;background:#eef2f7;color:#64748b;
-                    font:700 14px/28px Arial,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;
+        f"""<div style="width:28px;height:28px;border-radius:50%;background:{e.get("comment_bar_color","#eef2f7")};
+                    color:#ffffff;font:700 14px/28px Arial,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;
                     text-align:center;display:inline-block;margin-right:6px;">{m}</div>"""
-        for m in monograms[:5]
+        for m, e in zip(monograms[:5], entries[:5])
     )
     more_badge = ""
     if len(monograms) > 5:
         more_badge = f"""<span style="display:inline-block;margin-left:4px;color:#475569;
                           font:600 12px/1 Arial,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;">+{len(monograms)-5}</span>"""
 
-    # 各コメントブロック
+    # === コメントブロック生成 ===
     comment_blocks = []
     for e in entries:
+        bar = e.get("comment_bar_color") or "#2563eb"
         _comment = escape_nl2br(e.get("comment", ""))
         _name = escape_nl2br(e.get("name", ""))
         _org = escape_nl2br(e.get("org", ""))
         _bio = escape_nl2br(e.get("bio", "") or "")
         _mono = (e.get("monogram") or auto_monogram(e.get("name", "")))[:1] or "名"
-        bar = e.get("comment_bar_color") or "#2563eb"
 
         bio_html = (
             f"<div style=\"color:#94a3b8;font:12px/1.6 Arial,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;"
@@ -284,6 +284,9 @@ def render_card_grouped(
         )
 
         block = f"""
+        <!-- 個別コメントブロック -->
+        <tr><td style="height:4px;background:{bar};border-radius:4px 4px 0 0;"></td></tr>
+
         <tr><td style="padding:10px 20px 0 20px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             <tbody>
@@ -299,8 +302,9 @@ def render_card_grouped(
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tbody><tr>
               <td style="width:1%;vertical-align:middle;">
-                <div style="width:40px;height:40px;border-radius:50%;background:#eef2f7;color:#64748b;
-                            font:700 18px Arial,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;line-height:40px;text-align:center;">
+                <div style="width:40px;height:40px;border-radius:50%;background:{bar};
+                            color:#ffffff;font:700 18px Arial,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;
+                            line-height:40px;text-align:center;">
                   {_mono}
                 </div>
               </td>
@@ -321,45 +325,55 @@ def render_card_grouped(
         """
         comment_blocks.append(block)
 
-    comments_html = "\n<tr><td style=\"height:10px;\"></td></tr>\n".join(comment_blocks)
+    comments_html = "\n<tr><td style=\"height:8px;\"></td></tr>\n".join(comment_blocks)
 
     return f"""
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;">
       <tbody>
-        <tr><td style="height:4px;background:{_strip_color};border-top-left-radius:12px;border-top-right-radius:12px;"></td></tr>
+        <tr><td style="height:4px;background:{_strip_color};
+                      border-top-left-radius:12px;border-top-right-radius:12px;"></td></tr>
 
-        <!-- 見出し（左=号数+タイトル / 右=複数コメントバッジ） -->
+        <!-- 記事タイトル -->
         <tr>
           <td style="padding:16px 20px 6px 20px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <table role="presentation" width="100%">
               <tbody><tr>
                 <td style="text-align:left;">
-                  <span style="display:inline-block;vertical-align:middle;white-space:nowrap;color:#475569;font-weight:600;font-size:13px;line-height:13px;">{_issue_label}</span>
-                  <span style="display:inline-block;vertical-align:middle;margin-left:6px;color:#0f172a;font-weight:700;font-size:19px;line-height:19px;word-break:break-word;">{_article_title}</span>
+                  <span style="display:inline-block;vertical-align:middle;white-space:nowrap;
+                               color:#475569;font-weight:600;font-size:13px;line-height:13px;">
+                    {_issue_label}
+                  </span>
+                  <span style="display:inline-block;vertical-align:middle;margin-left:6px;
+                               color:#0f172a;font-weight:700;font-size:19px;line-height:19px;">
+                    {_article_title}
+                  </span>
                 </td>
-                <td style="text-align:right;white-space:nowrap;">
-                  <span style="display:inline-block;background:#f1f5ff;border:1px solid #c7d2fe;color:#1d4ed8;font-weight:700;font-size:12px;padding:6px 10px;border-radius:14px;">
+                <td style="text-align:right;">
+                  <span style="display:inline-block;background:#f1f5ff;border:1px solid #c7d2fe;
+                               color:#1d4ed8;font-weight:700;font-size:12px;padding:6px 10px;
+                               border-radius:14px;">
                     {len(entries)}件 / {len(set(commentators))}名
                   </span>
                 </td>
               </tr></tbody>
             </table>
-
             <div style="margin-top:8px;">{chips_html}{more_badge}</div>
           </td>
         </tr>
 
-        <!-- コメント群 -->
         {comments_html}
 
-        <!-- ボタン -->
+        <!-- 記事リンク -->
         <tr>
           <td style="padding:14px 20px 18px 20px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <table role="presentation" width="100%">
               <tbody><tr>
                 <td style="background:#e8f0ff;border:1px solid #c7d2fe;border-radius:8px;">
                   <a href="{_link_url}" target="_blank" rel="noopener noreferrer"
-                     style="display:block;width:100%;text-align:center;color:#1d4ed8;text-decoration:none;font:700 15px/1 Arial,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;padding:12px 18px;border-radius:8px;">
+                     style="display:block;width:100%;text-align:center;color:#1d4ed8;
+                            text-decoration:none;font:700 15px/1 Arial,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;
+                            padding:12px 18px;border-radius:8px;">
                     記事を読む
                   </a>
                 </td>
@@ -370,6 +384,7 @@ def render_card_grouped(
       </tbody>
     </table>
     """
+
 
 
 # =========================
